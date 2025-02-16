@@ -1,0 +1,1 @@
+# wow-XLootGroup-RG
