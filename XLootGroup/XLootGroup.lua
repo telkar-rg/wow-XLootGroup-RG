@@ -8,6 +8,94 @@ XLootGroup.dewdrop = AceLibrary("Dewdrop-2.0")
 local AA = AceLibrary("AnchorsAway-1.0")
 XLootGroup.AA = AA
 
+local ADDON_NAME_SHORT = "TMT_XLG"
+local function DPrint(...)
+	DEFAULT_CHAT_FRAME:AddMessage( "|cff66bbff"..ADDON_NAME_SHORT.."|r: " .. strjoin("|r; ", tostringall(...) ) )
+	ChatFrame3:AddMessage( "|cff66bbff"..ADDON_NAME_SHORT.."|r: " .. strjoin("|r; ", tostringall(...) ) )
+end
+local print=DPrint
+
+local TMT = _G["TransmogTracker"]
+local PlayerClassEN, PlayerClassLocal
+local tmog_itemSubClasses = {}
+local magic_1, magic_2, magic_3, magic_4, magic_5, magic_6, magic_7 = 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875
+local ttClasses = gsub(ITEM_CLASSES_ALLOWED, "%%s", "")
+local ttClassesLen = strlen(ttClasses)
+local pattern_item = "(\124c%x+\124Hitem:(%d+):[-:%d]+\124h%[(.-)%]\124h\124r)"
+local tmog_allowed = {
+	["ALL"] = {
+		["INVTYPE_HEAD"] 		= 1,
+		["INVTYPE_SHOULDER"] 	= 1,
+		["INVTYPE_BODY"] 		= 1,
+		["INVTYPE_CHEST"] 		= 1,
+		["INVTYPE_ROBE"] 		= 1,
+		["INVTYPE_WAIST"] 		= 1,
+		["INVTYPE_LEGS"] 		= 1,
+		["INVTYPE_FEET"] 		= 1,
+		["INVTYPE_WRIST"] 		= 1,
+		["INVTYPE_HAND"] 		= 1,
+		["INVTYPE_CLOAK"] 		= 1,
+		["INVTYPE_WEAPON"] 		= 1,
+		["INVTYPE_2HWEAPON"] 	= 1,
+		["INVTYPE_WEAPONMAINHAND"] 	= 1,
+	},
+	["WARRIOR"] = {
+		["INVTYPE_WEAPONOFFHAND"] 	= 1,
+		["INVTYPE_RANGEDRIGHT"] 	= 1, -- needs 2nd check
+		["INVTYPE_SHIELD"] 	= 1,
+		["INVTYPE_RANGED"] 	= 1,
+		["INVTYPE_THROWN"] 	= 1,
+	},
+	["DEATHKNIGHT"] = {
+		["INVTYPE_WEAPONOFFHAND"] 	= 1,
+	},
+	["PALADIN"] = {
+		["INVTYPE_SHIELD"] 	= 1,
+	},
+	["PRIEST"] = {
+		["INVTYPE_HOLDABLE"] 	= 1,
+		["INVTYPE_RANGEDRIGHT"] = 1, -- needs 2nd check
+	},
+	["SHAMAN"] = {
+		["INVTYPE_SHIELD"] 	= 1,
+		["INVTYPE_WEAPONOFFHAND"] 	= 1,
+	},
+	["DRUID"] = {
+		["INVTYPE_HOLDABLE"] 	= 1
+	},
+	["ROGUE"] = {
+		["INVTYPE_WEAPONOFFHAND"] 	= 1,
+		["INVTYPE_RANGED"] 	= 1,
+		["INVTYPE_THROWN"] 	= 1,
+		["INVTYPE_RANGEDRIGHT"] = 1, -- needs 2nd check
+	},
+	["MAGE"] = {
+		["INVTYPE_HOLDABLE"] 	= 1,
+		["INVTYPE_RANGEDRIGHT"] = 1,
+	},
+	["WARLOCK"] = {
+		["INVTYPE_HOLDABLE"] 	= 1,
+		["INVTYPE_RANGEDRIGHT"] = 1, -- needs 2nd check
+	},
+	["HUNTER"] = {
+		["INVTYPE_WEAPONOFFHAND"] 	= 1,
+		["INVTYPE_RANGED"] 	= 1,
+		["INVTYPE_THROWN"] 	= 1,
+		["INVTYPE_RANGEDRIGHT"] 	= 1, -- needs 2nd check
+	},
+	["GUNS_CROSSBOWS"] = {
+		["HUNTER"] 	= 1,
+		["ROGUE"] 	= 1,
+		["WARRIOR"] = 1,
+	},
+	["WANDS"] = {
+		["PRIEST"] 	= 1,
+		["MAGE"] 	= 1,
+		["WARLOCK"] = 1,
+	},
+}
+
+
 local _G = getfenv(0)
 
 XLootGroup.revision  = tonumber((string.gsub("$Revision: 61 $", "^%$Revision: (%d+) %$$", "%1")))
@@ -42,6 +130,9 @@ function XLootGroup:OnEnable()
 	self:RegisterEvent("START_LOOT_ROLL", "AddGroupLoot")
 	self:RegisterEvent("CANCEL_LOOT_ROLL", "CancelGroupLoot")
 	self:RegisterEvent("SpecialEvents_RollSelected", "RollSelect")
+	
+	PlayerClassLocal, PlayerClassEN = UnitClass("player")
+	tmog_itemSubClasses = { GetAuctionItemSubClasses(1) }
 	
 	if not AA.stacks.roll then
 		local stack = AA:NewAnchor("roll", "Loot Rolls", "Interface\\Buttons\\UI-GroupLoot-Dice-Up", db, self.dewdrop, nil, 'add')
@@ -168,6 +259,98 @@ function XLootGroup:AddGroupLoot(item, time)
 	row.link = GetLootRollItemLink(item)
 	row.status:SetMinMaxValues(0, time)
 	local texture, name, count, quality, bop, cneed, cgreed, cdis = GetLootRollItemInfo(item) -- patch 3.3 'canNeed,canGreed,canDis' params added
+	
+	local tmogState, itemLevel, itemType, itemSubType, itemEquipLoc, itemId
+	if TMT then
+		_, itemId, _ = strmatch( row.link, pattern_item )
+		if itemId then
+			itemId = tonumber(itemId)
+		end
+		if itemId then
+			_, _, _, itemLevel, _, itemType, itemSubType, _, itemEquipLoc = GetItemInfo(itemId)
+		end
+		if itemEquipLoc and itemEquipLoc ~= "" then
+			if TMT:checkItemId(itemId) then
+				tmogState = 1 -- we know it
+			elseif TMT:checkUniqueId(itemId) then
+				tmogState = 2 -- we know it through others
+			else
+				tmogState = 3 -- we dont know it
+			end
+		end
+		if itemLevel > 240 then  -- ignore pdk25 and above item levels
+			tmogState = nil
+		end
+		
+		-- check if we even want to track this
+		if tmogState and tmogState == 3 then
+			if not (tmog_allowed.ALL[itemEquipLoc] or tmog_allowed[PlayerClassEN][itemEquipLoc]) then
+				-- print("this class", PlayerClassEN, "cannot tmog", itemEquipLoc)
+				tmogState = nil
+			end
+			
+			if itemEquipLoc == "INVTYPE_RANGEDRIGHT" then
+				if ( itemSubType == tmog_itemSubClasses[16] ) then -- if WAND
+					if not tmog_allowed.WANDS[PlayerClassEN] then
+						-- print("this class", PlayerClassEN, "cannot tmog", itemSubType)
+						tmogState = nil
+					end
+				else -- if GUNS CROSSBOWS
+					if not tmog_allowed.GUNS_CROSSBOWS[PlayerClassEN] then
+						-- print("this class", PlayerClassEN, "cannot tmog", itemSubType)
+						tmogState = nil
+					end
+				end
+			end
+		end
+		
+		if tmogState and tmogState ~= 1 then
+			
+			TMT_XLG_TooltipHidden:SetOwner(UIParent, "ANCHOR_NONE")
+			TMT_XLG_TooltipHidden:ClearLines()
+			TMT_XLG_TooltipHidden:SetHyperlink(row.link) -- check tooltip of our item
+			
+			local outClasses
+			-- check all lines of our tooltip
+			for i=1,TMT_XLG_TooltipHidden:NumLines() do 
+				local txtL = getglobal("TMT_XLG_TooltipHidden".."TextLeft" ..i):GetText()
+				-- local txtR = getglobal("TMT_XLG_TooltipHidden".."TextRight"..i):GetText()
+				if not txtL or txtL=="" or txtL==" " then break end
+				
+				if strsub(txtL,1,ttClassesLen) == ttClasses then
+					
+					local tc = { strsplit(",", strsub(txtL,ttClassesLen+1)) }
+					-- print("this item is for classes:", unpack(tc))
+					outClasses = {}
+					
+					if #tc > 0 then
+						for _, cName in pairs(tc) do
+							cName = strtrim(cName)
+							outClasses[cName] = 1
+						end
+					end
+					if not outClasses[PlayerClassLocal] then 
+						tmogState = nil 
+					end
+					break
+				end
+			end
+			TMT_XLG_TooltipHidden:Hide()
+		end
+	end
+	if tmogState then
+		if tmogState == 1 then
+			row.tmtIcon.tex:SetTexCoord(magic_4, magic_5, 0, 0.5)
+		elseif tmogState == 2 then
+			row.tmtIcon.tex:SetTexCoord(magic_3, magic_4, 0, 0.5)
+		else
+			row.tmtIcon.tex:SetTexCoord(magic_2, magic_3, 0, 0.5)
+		end
+		row.tmtIcon.tex:Show()
+	else
+		row.tmtIcon.tex:Hide()
+	end
+	
 	XLoot:SetBindText(XLoot:GetBindOn(row.link), row.fsbind)
 	row.bind = bind
 	local length = self.db.profile.nametrunc
@@ -311,6 +494,16 @@ function XLootGroup:GroupBuildRow(stack, id)
 	bpass:SetScript("OnEnter", function() GameTooltip:SetOwner(bpass, "ANCHOR_RIGHT"); GameTooltip:SetText(PASS) end)
 	bpass:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	
+	-- Telkar Edit here
+	print("--",rowname, id)
+	local tmtIcon = CreateFrame("Frame", rowname.."tmtIcon", row)
+	-- texture = Frame:CreateTexture([name, drawLayer, templateName, subLevel])
+	tmtIcon.tex = tmtIcon:CreateTexture()
+	tmtIcon.tex:SetTexture("Interface\\Minimap\\TRACKING\\OBJECTICONS")
+	tmtIcon.tex:SetTexCoord(0, 0.125, 0, 0.5)
+	tmtIcon.tex:SetPoint("RIGHT", row, "LEFT", 0, 0)
+	
+	
 	local status = CreateFrame("StatusBar", rowname.."StatusBar", row)
 	status:SetMinMaxValues(0, 60000)
 	status:SetValue(0)
@@ -336,11 +529,17 @@ function XLootGroup:GroupBuildRow(stack, id)
 	bpass:SetWidth(size)
 	bpass:SetHeight(size)
 	
+	tmtIcon.tex:SetWidth(size)
+	tmtIcon.tex:SetHeight(size)
+	
 	local level = row.overlay:GetFrameLevel()+1
 	bneed:SetFrameLevel(level)
 	bgreed:SetFrameLevel(level)
 	bdis:SetFrameLevel(level) -- 3.3 patch
 	bpass:SetFrameLevel(level)
+	
+	tmtIcon:SetFrameLevel(level)
+	
 	
 	bneed:SetPoint("LEFT", row.button, "RIGHT", 5, -1)
 	bgreed:SetPoint("LEFT", bneed, "RIGHT", 0, -1) 
@@ -362,6 +561,8 @@ function XLootGroup:GroupBuildRow(stack, id)
 	spark:SetHeight(status:GetHeight()*2.44)
 
 	XLoot:ItemButtonWrapper(row.button, 8, 8, 20)
+	
+	row.tmtIcon = tmtIcon
 	
 	row.bneed = bneed
 	row.bgreed = bgreed

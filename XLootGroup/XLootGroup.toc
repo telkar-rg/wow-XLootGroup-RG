@@ -16,8 +16,9 @@
 ## X-Curse-Project-ID: xloot-group
 ## X-Curse-Repository-ID: wow/xloot-group/mainline
 
-## OptionalDeps: Ace2, DewdropLib, AnchorsAway
+## OptionalDeps: Ace2, DewdropLib, AnchorsAway, TransmogTracker
 
+XLootGroup_Transmog.xml
 XLootGroup.lua
 
 locales\enUS.lua
