@@ -9,11 +9,11 @@ if not TMT then return end
 -- XLootGroup.AA = AA
 
 local ADDON_NAME_SHORT = "TMT_XLG"
-local function DPrint(...)
-	DEFAULT_CHAT_FRAME:AddMessage( "|cff66bbff"..ADDON_NAME_SHORT.."|r: " .. strjoin("|r; ", tostringall(...) ) )
-	ChatFrame3:AddMessage( "|cff66bbff"..ADDON_NAME_SHORT.."|r: " .. strjoin("|r; ", tostringall(...) ) )
-end
-local print=DPrint
+-- local function DPrint(...)
+	-- DEFAULT_CHAT_FRAME:AddMessage( "|cff66bbff"..ADDON_NAME_SHORT.."|r: " .. strjoin("|r; ", tostringall(...) ) )
+	-- ChatFrame3:AddMessage( "|cff66bbff"..ADDON_NAME_SHORT.."|r: " .. strjoin("|r; ", tostringall(...) ) )
+-- end
+-- local print=DPrint
 
 
 
@@ -101,7 +101,7 @@ local tmog_allowed = {
 
 function ADDON_TABLE.OnReady()
 	-- called when "ADDON_LOADED" event fired
-	print("-- OnReady, ADDON_LOADED")
+	-- print("-- OnReady, ADDON_LOADED")
 	
 	PlayerClassLocal, PlayerClassEN = UnitClass("player")
 	tmog_itemSubClasses = { GetAuctionItemSubClasses(1) }
@@ -110,7 +110,7 @@ end
 
 function ADDON_TABLE.OnLoad()
 	-- called when addon file is fully executed
-	print("-- OnLoad")
+	-- print("-- OnLoad")
 	
 	PlayerClassLocal, PlayerClassEN = UnitClass("player") 		-- get EN PlayerClass
 	tmog_itemSubClasses = { GetAuctionItemSubClasses(1) }
@@ -132,8 +132,8 @@ end
 function TMT_AddGroupLoot(self, item, time)
 	local stack = XLootGroup.AA.stacks.roll
 	
-	print("stack.rows", #stack.rows)
-	print("-- TMT_AddGroupLoot", item)
+	-- print("stack.rows", #stack.rows)
+	-- print("-- TMT_AddGroupLoot", item)
 	
 	local row
 	for idx = 1, #stack.rows do
@@ -248,7 +248,7 @@ function TMT_AddGroupLoot(self, item, time)
 	else
 		row.tmtIcon.tex:Hide()
 	end
-	print("tmogState", tmogState)
+	-- print("tmogState", tmogState)
 end
 
 
