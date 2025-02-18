@@ -1,0 +1,9 @@
+﻿## Interface: 30300
+## Title: XLootGroup_PluginTMT
+
+## Author: Telkar
+
+## Dependencies: XLoot, XLootGroup, TransmogTracker
+
+XLootGroup_PluginTMT.xml
+XLootGroup_PluginTMT.lua
