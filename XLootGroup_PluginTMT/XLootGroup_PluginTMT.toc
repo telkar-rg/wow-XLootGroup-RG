@@ -1,7 +1,9 @@
 ﻿## Interface: 30300
-## Title: XLootGroup_PluginTMT
+## Title: XLoot |cFF77BBFFGroup|r Transmog Plugin (0.1)
+## Notes: Adds transmog indicator to the Group Roll Frame.|n|cFFFFFFFFOnly useful on the Rising-Gods realm.
+## Notes-deDE: Fügt Transmog-Indicator zum WÜfelfenster hinzu.|n|cFFFFFFFFNur am Rising-Gods Realm sinnvoll.
 
-## Author: Telkar
+## Author: Telkar-RG
 
 ## Dependencies: XLoot, XLootGroup, TransmogTracker
 
