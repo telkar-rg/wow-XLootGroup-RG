@@ -278,7 +278,7 @@ function XLootGroup:AddGroupLoot(item, time)
 				tmogState = 3 -- we dont know it
 			end
 		end
-		if itemLevel > 240 then  -- ignore pdk25 and above item levels
+		if itemLevel > 2400 then  -- ignore pdk25 and above item levels
 			tmogState = nil
 		end
 		
@@ -495,13 +495,13 @@ function XLootGroup:GroupBuildRow(stack, id)
 	bpass:SetScript("OnLeave", function() GameTooltip:Hide() end)
 	
 	-- Telkar Edit here
-	print("--",rowname, id)
+	-- print("--",rowname, id)
 	local tmtIcon = CreateFrame("Frame", rowname.."tmtIcon", row)
 	-- texture = Frame:CreateTexture([name, drawLayer, templateName, subLevel])
 	tmtIcon.tex = tmtIcon:CreateTexture()
 	tmtIcon.tex:SetTexture("Interface\\Minimap\\TRACKING\\OBJECTICONS")
 	tmtIcon.tex:SetTexCoord(0, 0.125, 0, 0.5)
-	tmtIcon.tex:SetPoint("RIGHT", row, "LEFT", 0, 0)
+	tmtIcon.tex:SetPoint("CENTER", row, "TOPLEFT", 0, -3)
 	
 	
 	local status = CreateFrame("StatusBar", rowname.."StatusBar", row)
@@ -538,7 +538,7 @@ function XLootGroup:GroupBuildRow(stack, id)
 	bdis:SetFrameLevel(level) -- 3.3 patch
 	bpass:SetFrameLevel(level)
 	
-	tmtIcon:SetFrameLevel(level)
+	tmtIcon:SetFrameLevel(level+1)
 	
 	
 	bneed:SetPoint("LEFT", row.button, "RIGHT", 5, -1)
