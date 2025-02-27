@@ -170,7 +170,7 @@ function TMT_AddGroupLoot(self, item, time)
 	_, _, _, itemLevel, _, itemType, itemSubType, _, itemEquipLoc = GetItemInfo(itemId)
 	
 	if not itemEquipLoc or itemEquipLoc == "" then return end
-	if itemLevel > 2400 then  -- ignore pdk25 and above item levels
+	if itemLevel > 240 then  -- ignore pdk25 and above item levels
 		return
 	end
 	
